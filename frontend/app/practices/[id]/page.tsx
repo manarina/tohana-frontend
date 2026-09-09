@@ -25,51 +25,59 @@ import {
   Leaf,
   Calendar,
   MapPin,
-  Building2,
   FileText,
-  Sprout,
+  TrendingUp,
+  GraduationCap,
   CheckCircle,
+  Star,
+  MessageSquare,
+  Target,
+  Sprout,
 } from 'lucide-react';
 
 // ============================================================
 // TYPES
 // ============================================================
 
+interface FarmData {
+  id: number;
+  name: string;
+}
+
 interface PracticeData {
   id: number;
 
   practiceType: string;
 
+  specificTechnique?: string;
+
+  surface?: number;
+
+  adoptionDate?: string;
+
   description?: string;
 
-  startDate?: string;
+  perceivedBenefit?: string;
 
-  endDate?: string;
+  yieldImprovement?: number;
 
-  status?: string;
+  sourceOfKnowledge?: string;
 
-  notes?: string;
+  isStillPracticed?: boolean;
 
-  createdAt: string;
+  challenges?: string;
+
+  satisfactionRating?: number;
+
+  recommendation?: string;
+
+  farmId?: number;
+
+  farm?: FarmData;
+
+  createdAt?: string;
 
   updatedAt?: string;
-
-  farm?: {
-    id: number;
-    name: string;
-  };
-
-  plot?: {
-    id: number;
-    name: string;
-    cropType?: string;
-    surface?: number;
-
-    farm?: {
-      id: number;
-      name: string;
-    };
-  };
 }
 
 interface PracticeQueryData {
@@ -87,7 +95,6 @@ export default function PracticeDetailPage() {
   const id = parseInt(params.id as string, 10);
 
   const [isEditOpen, setIsEditOpen] = useState(false);
-
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
 
   const {
@@ -97,7 +104,7 @@ export default function PracticeDetailPage() {
     refetch,
   } = useQuery<PracticeQueryData>(GET_PRACTICE, {
     variables: { id },
-    skip: !id,
+    skip: !id || Number.isNaN(id),
   });
 
   const [deletePractice] = useMutation(DELETE_PRACTICE);
@@ -130,7 +137,11 @@ export default function PracticeDetailPage() {
     }
   };
 
-  const handleFormClose = async () => {
+  const handleFormClose = () => {
+    setIsEditOpen(false);
+  };
+
+  const handleFormSuccess = async () => {
     setIsEditOpen(false);
 
     await refetch();
@@ -145,51 +156,133 @@ export default function PracticeDetailPage() {
       return 'Non spécifiée';
     }
 
-    return new Date(date).toLocaleDateString('fr-FR', {
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return date;
+    }
+
+    return parsedDate.toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'long',
       year: 'numeric',
     });
   };
 
-  const getStatusColor = (status?: string) => {
-    const colors: Record<string, string> = {
-      ACTIVE:
-        'bg-green-100 text-green-800 border-green-200',
+  const formatPercentage = (value?: number) => {
+    if (
+      value === undefined ||
+      value === null
+    ) {
+      return 'Non spécifiée';
+    }
 
-      COMPLETED:
-        'bg-blue-100 text-blue-800 border-blue-200',
-
-      PLANNED:
-        'bg-yellow-100 text-yellow-800 border-yellow-200',
-
-      CANCELLED:
-        'bg-red-100 text-red-800 border-red-200',
-    };
-
-    return (
-      colors[status || ''] ||
-      'bg-gray-100 text-gray-800 border-gray-200'
-    );
+    return `${value}%`;
   };
 
-  const getStatusLabel = (status?: string) => {
-    const labels: Record<string, string> = {
-      ACTIVE: 'Active',
-      COMPLETED: 'Terminée',
-      PLANNED: 'Planifiée',
-      CANCELLED: 'Annulée',
-    };
+  const formatRating = (value?: number) => {
+    if (
+      value === undefined ||
+      value === null ||
+      value === 0
+    ) {
+      return 'Non évaluée';
+    }
 
-    return (
-      labels[status || ''] ||
-      status ||
-      'Non spécifié'
-    );
+    return `${value}/5`;
+  };
+
+  const formatEnum = (value?: string) => {
+    if (!value) {
+      return 'Non spécifié';
+    }
+
+    return value
+      .replace(/_/g, ' ')
+      .toLowerCase()
+      .replace(/\b\w/g, (letter) => letter.toUpperCase());
   };
 
   const getPracticeIcon = () => {
     return '🌱';
+  };
+
+  const getPracticeTypeLabel = (
+    type?: string,
+  ) => {
+    if (!type) {
+      return 'Pratique non spécifiée';
+    }
+
+    const labels: Record<string, string> = {
+      CULTURE_DE_COUVERTURE:
+        'Culture de couverture',
+      AGROFORESTERIE: 'Agroforesterie',
+      COMPOSTAGE: 'Compostage',
+      MULCHING: 'Mulching',
+      ZAI: 'Zaï',
+      BANDES_ENHERBEES:
+        'Bandes enherbées',
+      IRRIGATION_ECONOMIE_EAU:
+        "Irrigation économe en eau",
+      AUTRE: 'Autre',
+    };
+
+    return labels[type] || formatEnum(type);
+  };
+
+  const getBenefitLabel = (
+    benefit?: string,
+  ) => {
+    if (!benefit) {
+      return 'Non spécifié';
+    }
+
+    const labels: Record<string, string> = {
+      AMELIORATION_SOL:
+        'Amélioration du sol',
+      AUGMENTATION_RENDEMENT:
+        'Augmentation du rendement',
+      REDUCTION_EROSION:
+        "Réduction de l'érosion",
+      ECONOMIE_EAU:
+        "Économie d'eau",
+      REDUCTION_INTRANTS:
+        'Réduction des intrants',
+      DIVERSIFICATION_REVENUS:
+        'Diversification des revenus',
+      MEILLEURE_ADAPTATION:
+        'Meilleure adaptation',
+      AUTRE: 'Autre',
+    };
+
+    return labels[benefit] || formatEnum(benefit);
+  };
+
+  const getKnowledgeSourceLabel = (
+    source?: string,
+  ) => {
+    if (!source) {
+      return 'Non spécifiée';
+    }
+
+    const labels: Record<string, string> = {
+      FORMATION_TOHATRA:
+        'Formation TOHATRA',
+      FORMATION_DEFIS:
+        'Formation DEFIS',
+      FORMATION_PRADA:
+        'Formation PRADA',
+      VULGARISATION:
+        'Vulgarisation',
+      ECHANGE_PAYSAN:
+        'Échange entre paysans',
+      AUTO_APPRENTISSAGE:
+        'Auto-apprentissage',
+      AUTRE: 'Autre',
+    };
+
+    return labels[source] || formatEnum(source);
   };
 
   // ============================================================
@@ -219,19 +312,19 @@ export default function PracticeDetailPage() {
   if (error || !practice) {
     return (
       <Layout>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <h3 className="text-red-800 font-medium">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <h3 className="text-red-800 font-medium text-lg">
             Erreur de chargement
           </h3>
 
-          <p className="text-red-600 mt-1">
+          <p className="text-red-600 mt-2">
             {error?.message ||
               'Pratique non trouvée'}
           </p>
 
           <button
             onClick={handleBack}
-            className="mt-4 btn-primary"
+            className="mt-4 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
           >
             Retour à la liste
           </button>
@@ -266,7 +359,9 @@ export default function PracticeDetailPage() {
           <div className="flex items-center gap-2">
 
             <button
-              onClick={() => setIsEditOpen(true)}
+              onClick={() =>
+                setIsEditOpen(true)
+              }
               className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
             >
               <Edit2 className="h-4 w-4" />
@@ -275,7 +370,9 @@ export default function PracticeDetailPage() {
             </button>
 
             <button
-              onClick={() => setIsDeleteOpen(true)}
+              onClick={() =>
+                setIsDeleteOpen(true)
+              }
               className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
             >
               <Trash2 className="h-4 w-4" />
@@ -292,7 +389,7 @@ export default function PracticeDetailPage() {
 
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
 
-          {/* EN-TÊTE */}
+          {/* HEADER */}
 
           <div className="bg-gradient-to-r from-purple-600 to-purple-700 p-6">
 
@@ -305,22 +402,41 @@ export default function PracticeDetailPage() {
               <div>
 
                 <h1 className="text-2xl font-bold text-white">
-                  {practice.practiceType}
+                  {getPracticeTypeLabel(
+                    practice.practiceType,
+                  )}
                 </h1>
 
-                <div className="flex flex-wrap items-center gap-2 mt-2">
+                {practice.specificTechnique && (
+                  <p className="text-purple-100 mt-1">
+                    {practice.specificTechnique}
+                  </p>
+                )}
 
-                  {practice.status && (
-                    <span
-                      className={`text-xs font-medium px-2 py-1 rounded-full border ${getStatusColor(
-                        practice.status,
-                      )}`}
-                    >
-                      {getStatusLabel(
-                        practice.status,
-                      )}
-                    </span>
-                  )}
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+
+                  <span className="inline-flex items-center gap-1 px-3 py-1 bg-white/20 text-white rounded-full text-sm">
+                    <Calendar className="h-3.5 w-3.5" />
+
+                    Adoption :{' '}
+                    {formatDate(
+                      practice.adoptionDate,
+                    )}
+                  </span>
+
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-sm ${
+                      practice.isStillPracticed
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    <CheckCircle className="h-3.5 w-3.5" />
+
+                    {practice.isStillPracticed
+                      ? 'Toujours pratiquée'
+                      : 'Plus pratiquée'}
+                  </span>
 
                 </div>
 
@@ -336,11 +452,11 @@ export default function PracticeDetailPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
-              {/* TYPE DE PRATIQUE */}
+              {/* TYPE */}
 
               <div>
 
-                <h3 className="text-sm font-medium text-gray-500 mb-1">
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
                   Type de pratique
                 </h3>
 
@@ -349,32 +465,8 @@ export default function PracticeDetailPage() {
                   <Leaf className="h-5 w-5 text-purple-500" />
 
                   <span className="text-lg font-semibold text-gray-900">
-                    {practice.practiceType}
-                  </span>
-
-                </div>
-
-              </div>
-
-              {/* STATUT */}
-
-              <div>
-
-                <h3 className="text-sm font-medium text-gray-500 mb-1">
-                  Statut
-                </h3>
-
-                <div className="flex items-center gap-2">
-
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium border ${getStatusColor(
-                      practice.status,
-                    )}`}
-                  >
-                    {getStatusLabel(
-                      practice.status,
+                    {getPracticeTypeLabel(
+                      practice.practiceType,
                     )}
                   </span>
 
@@ -382,12 +474,56 @@ export default function PracticeDetailPage() {
 
               </div>
 
-              {/* DATE DE DÉBUT */}
+              {/* TECHNIQUE */}
 
               <div>
 
-                <h3 className="text-sm font-medium text-gray-500 mb-1">
-                  Date de début
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  Technique spécifique
+                </h3>
+
+                <div className="flex items-center gap-2">
+
+                  <Sprout className="h-5 w-5 text-green-500" />
+
+                  <span className="text-gray-700">
+                    {practice.specificTechnique ||
+                      'Non spécifiée'}
+                  </span>
+
+                </div>
+
+              </div>
+
+              {/* SURFACE */}
+
+              <div>
+
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  Surface concernée
+                </h3>
+
+                <div className="flex items-center gap-2">
+
+                  <MapPin className="h-5 w-5 text-blue-500" />
+
+                  <span className="text-lg font-semibold text-gray-900">
+                    {practice.surface !==
+                    undefined
+                      ? `${practice.surface} ha`
+                      : 'Non spécifiée'}
+                  </span>
+
+                </div>
+
+              </div>
+
+              {/* DATE D'ADOPTION */}
+
+              <div>
+
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  Date d'adoption
                 </h3>
 
                 <div className="flex items-center gap-2">
@@ -396,7 +532,7 @@ export default function PracticeDetailPage() {
 
                   <span className="text-gray-700">
                     {formatDate(
-                      practice.startDate,
+                      practice.adoptionDate,
                     )}
                   </span>
 
@@ -404,21 +540,21 @@ export default function PracticeDetailPage() {
 
               </div>
 
-              {/* DATE DE FIN */}
+              {/* BÉNÉFICE */}
 
               <div>
 
-                <h3 className="text-sm font-medium text-gray-500 mb-1">
-                  Date de fin
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  Bénéfice perçu
                 </h3>
 
                 <div className="flex items-center gap-2">
 
-                  <Calendar className="h-5 w-5 text-gray-400" />
+                  <Target className="h-5 w-5 text-green-500" />
 
                   <span className="text-gray-700">
-                    {formatDate(
-                      practice.endDate,
+                    {getBenefitLabel(
+                      practice.perceivedBenefit,
                     )}
                   </span>
 
@@ -426,84 +562,87 @@ export default function PracticeDetailPage() {
 
               </div>
 
-              {/* PARCELLE */}
+              {/* RENDEMENT */}
 
-              {practice.plot && (
-                <div className="col-span-full">
+              <div>
 
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">
-                    Parcelle
-                  </h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  Amélioration du rendement
+                </h3>
 
-                  <Link
-                    href={`/plots/${practice.plot.id}`}
-                    className="flex flex-wrap items-center gap-2 text-blue-600 hover:text-blue-700 hover:underline transition-colors"
-                  >
+                <div className="flex items-center gap-2">
 
-                    <MapPin className="h-5 w-5" />
+                  <TrendingUp className="h-5 w-5 text-green-600" />
 
-                    <span className="font-medium">
-                      {practice.plot.name}
-                    </span>
-
-                    {practice.plot.cropType && (
-                      <>
-                        <span className="text-gray-400">
-                          •
-                        </span>
-
-                        <span className="text-gray-600">
-                          {practice.plot.cropType}
-                        </span>
-                      </>
+                  <span className="text-lg font-semibold text-green-700">
+                    {formatPercentage(
+                      practice.yieldImprovement,
                     )}
-
-                    {practice.plot.surface !==
-                      undefined && (
-                      <>
-                        <span className="text-gray-400">
-                          •
-                        </span>
-
-                        <span className="text-gray-500">
-                          {practice.plot.surface} ha
-                        </span>
-                      </>
-                    )}
-
-                  </Link>
-
-                  {practice.plot.farm && (
-                    <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
-
-                      <Building2 className="h-4 w-4" />
-
-                      <span>
-                        Exploitation :{' '}
-                        {practice.plot.farm.name}
-                      </span>
-
-                    </div>
-                  )}
+                  </span>
 
                 </div>
-              )}
+
+              </div>
+
+              {/* SOURCE DE CONNAISSANCE */}
+
+              <div>
+
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  Source de connaissance
+                </h3>
+
+                <div className="flex items-center gap-2">
+
+                  <GraduationCap className="h-5 w-5 text-blue-500" />
+
+                  <span className="text-gray-700">
+                    {getKnowledgeSourceLabel(
+                      practice.sourceOfKnowledge,
+                    )}
+                  </span>
+
+                </div>
+
+              </div>
+
+              {/* SATISFACTION */}
+
+              <div>
+
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  Niveau de satisfaction
+                </h3>
+
+                <div className="flex items-center gap-2">
+
+                  <Star className="h-5 w-5 text-yellow-500" />
+
+                  <span className="text-lg font-semibold text-gray-900">
+                    {formatRating(
+                      practice.satisfactionRating,
+                    )}
+                  </span>
+
+                </div>
+
+              </div>
 
               {/* EXPLOITATION */}
 
               {practice.farm && (
                 <div className="col-span-full">
 
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">
                     Exploitation
                   </h3>
 
                   <Link
                     href={`/farms/${practice.farm.id}`}
-                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+                    className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 hover:underline transition-colors"
                   >
 
-                    <Building2 className="h-5 w-5" />
+                    <MapPin className="h-5 w-5" />
 
                     <span className="font-medium">
                       {practice.farm.name}
@@ -519,15 +658,15 @@ export default function PracticeDetailPage() {
               {practice.description && (
                 <div className="col-span-full">
 
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">
                     Description
                   </h3>
 
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
 
-                    <FileText className="h-5 w-5 text-gray-400 mt-0.5" />
+                    <FileText className="h-5 w-5 text-gray-400 mt-0.5 shrink-0" />
 
-                    <p className="text-gray-700 bg-gray-50 p-3 rounded-lg flex-1">
+                    <p className="text-gray-700 bg-gray-50 p-4 rounded-lg flex-1 whitespace-pre-wrap">
                       {practice.description}
                     </p>
 
@@ -536,61 +675,128 @@ export default function PracticeDetailPage() {
                 </div>
               )}
 
-              {/* NOTES */}
+              {/* DÉFIS */}
 
-              {practice.notes && (
+              {practice.challenges && (
                 <div className="col-span-full">
 
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">
-                    Notes
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">
+                    Défis rencontrés
                   </h3>
 
-                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg">
-                    {practice.notes}
-                  </p>
+                  <div className="flex gap-3">
+
+                    <MessageSquare className="h-5 w-5 text-orange-500 mt-0.5 shrink-0" />
+
+                    <p className="text-gray-700 bg-orange-50 border border-orange-100 p-4 rounded-lg flex-1 whitespace-pre-wrap">
+                      {practice.challenges}
+                    </p>
+
+                  </div>
 
                 </div>
               )}
 
-              {/* MÉTADONNÉES */}
+              {/* RECOMMANDATION */}
 
-              <div className="col-span-full pt-4 border-t border-gray-100">
+              {practice.recommendation && (
+                <div className="col-span-full">
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-400">
+                  <h3 className="text-sm font-medium text-gray-500 mb-2">
+                    Recommandation
+                  </h3>
 
-                  <div>
+                  <div className="flex gap-3">
 
-                    <span className="font-medium text-gray-500">
-                      Créé le :
-                    </span>
+                    <FileText className="h-5 w-5 text-purple-500 mt-0.5 shrink-0" />
 
-                    <span className="ml-2">
-                      {formatDate(
-                        practice.createdAt,
-                      )}
-                    </span>
+                    <p className="text-gray-700 bg-purple-50 border border-purple-100 p-4 rounded-lg flex-1 whitespace-pre-wrap">
+                      {practice.recommendation}
+                    </p>
 
                   </div>
 
-                  {practice.updatedAt && (
-                    <div>
+                </div>
+              )}
 
-                      <span className="font-medium text-gray-500">
-                        Modifié le :
-                      </span>
+              {/* STATUT */}
 
-                      <span className="ml-2">
-                        {formatDate(
-                          practice.updatedAt,
-                        )}
-                      </span>
+              <div className="col-span-full">
 
-                    </div>
-                  )}
+                <h3 className="text-sm font-medium text-gray-500 mb-2">
+                  État de la pratique
+                </h3>
+
+                <div className="flex items-center gap-2">
+
+                  <CheckCircle
+                    className={`h-5 w-5 ${
+                      practice.isStillPracticed
+                        ? 'text-green-500'
+                        : 'text-gray-400'
+                    }`}
+                  />
+
+                  <span
+                    className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                      practice.isStillPracticed
+                        ? 'bg-green-100 text-green-800'
+                        : 'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {practice.isStillPracticed
+                      ? 'Toujours pratiquée'
+                      : 'N’est plus pratiquée'}
+                  </span>
 
                 </div>
 
               </div>
+
+              {/* MÉTADONNÉES */}
+
+              {(practice.createdAt ||
+                practice.updatedAt) && (
+                <div className="col-span-full pt-4 border-t border-gray-100">
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm text-gray-400">
+
+                    {practice.createdAt && (
+                      <div>
+
+                        <span className="font-medium text-gray-500">
+                          Créé le :
+                        </span>
+
+                        <span className="ml-2">
+                          {formatDate(
+                            practice.createdAt,
+                          )}
+                        </span>
+
+                      </div>
+                    )}
+
+                    {practice.updatedAt && (
+                      <div>
+
+                        <span className="font-medium text-gray-500">
+                          Modifié le :
+                        </span>
+
+                        <span className="ml-2">
+                          {formatDate(
+                            practice.updatedAt,
+                          )}
+                        </span>
+
+                      </div>
+                    )}
+
+                  </div>
+
+                </div>
+              )}
 
             </div>
 
@@ -604,29 +810,12 @@ export default function PracticeDetailPage() {
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
 
-          {practice.plot && (
+          {practice.farm && (
             <Link
-              href={`/plots/${practice.plot.id}`}
+              href={`/farms/${practice.farm.id}`}
               className="bg-white rounded-xl shadow-md p-4 text-center hover:shadow-lg transition-shadow"
             >
-              <MapPin className="h-6 w-6 text-green-500 mx-auto mb-2" />
-
-              <p className="text-sm font-medium text-gray-700">
-                Voir la parcelle
-              </p>
-            </Link>
-          )}
-
-          {(practice.farm ||
-            practice.plot?.farm) && (
-            <Link
-              href={`/farms/${
-                practice.farm?.id ||
-                practice.plot?.farm?.id
-              }`}
-              className="bg-white rounded-xl shadow-md p-4 text-center hover:shadow-lg transition-shadow"
-            >
-              <Building2 className="h-6 w-6 text-blue-500 mx-auto mb-2" />
+              <MapPin className="h-6 w-6 text-blue-500 mx-auto mb-2" />
 
               <p className="text-sm font-medium text-gray-700">
                 Voir l'exploitation
@@ -635,7 +824,9 @@ export default function PracticeDetailPage() {
           )}
 
           <button
-            onClick={() => setIsEditOpen(true)}
+            onClick={() =>
+              setIsEditOpen(true)
+            }
             className="bg-white rounded-xl shadow-md p-4 text-center hover:shadow-lg transition-shadow"
           >
             <Edit2 className="h-6 w-6 text-purple-500 mx-auto mb-2" />
@@ -646,13 +837,26 @@ export default function PracticeDetailPage() {
           </button>
 
           <button
-            onClick={() => setIsDeleteOpen(true)}
+            onClick={() =>
+              setIsDeleteOpen(true)
+            }
             className="bg-white rounded-xl shadow-md p-4 text-center hover:shadow-lg transition-shadow"
           >
             <Trash2 className="h-6 w-6 text-red-500 mx-auto mb-2" />
 
             <p className="text-sm font-medium text-gray-700">
               Supprimer
+            </p>
+          </button>
+
+          <button
+            onClick={() => refetch()}
+            className="bg-white rounded-xl shadow-md p-4 text-center hover:shadow-lg transition-shadow"
+          >
+            <Loader2 className="h-6 w-6 text-gray-500 mx-auto mb-2" />
+
+            <p className="text-sm font-medium text-gray-700">
+              Actualiser
             </p>
           </button>
 
@@ -669,11 +873,9 @@ export default function PracticeDetailPage() {
             farms={
               practice.farm
                 ? [practice.farm]
-                : practice.plot?.farm
-                  ? [practice.plot.farm]
-                  : []
+                : []
             }
-            onSuccess={handleFormClose}
+            onSuccess={handleFormSuccess}
           />
         )}
 
@@ -685,7 +887,9 @@ export default function PracticeDetailPage() {
           <PracticeDelete
             practice={{
               id: practice.id,
-              name: practice.practiceType,
+              name: getPracticeTypeLabel(
+                practice.practiceType,
+              ),
             }}
             onConfirm={handleDelete}
             onCancel={() =>
