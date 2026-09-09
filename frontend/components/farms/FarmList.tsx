@@ -46,39 +46,98 @@ export function FarmList({
 }: FarmListProps) {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // ==============================
-  // PAGINATION
-  // ==============================
+  // Pagination pour la vue GRID
+  const [gridPage, setGridPage] = useState(1);
 
-  const ITEMS_PER_PAGE = 3;
+  // Pagination pour la vue TABLE
+  const [tablePage, setTablePage] = useState(1);
 
-  const [currentPage, setCurrentPage] = useState(1);
+  // Nombre d'éléments par page
+  const GRID_ITEMS_PER_PAGE = 4;
+  const TABLE_ITEMS_PER_PAGE = 3;
 
-  const totalPages = Math.ceil(farms.length / ITEMS_PER_PAGE);
+  /*
+   * ==========================================
+   * PAGINATION GRID
+   * ==========================================
+   */
 
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const gridTotalPages = Math.max(
+    1,
+    Math.ceil(farms.length / GRID_ITEMS_PER_PAGE)
+  );
 
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const gridStartIndex =
+    (gridPage - 1) * GRID_ITEMS_PER_PAGE;
 
-  const paginatedFarms = farms.slice(startIndex, endIndex);
+  const gridEndIndex =
+    gridStartIndex + GRID_ITEMS_PER_PAGE;
 
-  // Retour à la première page lorsque les données changent
-  // (ex: recherche, ajout, suppression, refresh)
+  const paginatedGridFarms = farms.slice(
+    gridStartIndex,
+    gridEndIndex
+  );
+
+  /*
+   * ==========================================
+   * PAGINATION TABLE
+   * ==========================================
+   */
+
+  const tableTotalPages = Math.max(
+    1,
+    Math.ceil(farms.length / TABLE_ITEMS_PER_PAGE)
+  );
+
+  const tableStartIndex =
+    (tablePage - 1) * TABLE_ITEMS_PER_PAGE;
+
+  const tableEndIndex =
+    tableStartIndex + TABLE_ITEMS_PER_PAGE;
+
+  const paginatedTableFarms = farms.slice(
+    tableStartIndex,
+    tableEndIndex
+  );
+
+  /*
+   * ==========================================
+   * RESET PAGINATION
+   * ==========================================
+   *
+   * Lorsque les données changent (recherche,
+   * suppression, ajout, rafraîchissement),
+   * on revient à la première page.
+   */
+
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, farms.length]);
+    setGridPage(1);
+    setTablePage(1);
+  }, [farms.length, searchTerm]);
 
-  // Sécurité : si la page actuelle devient supérieure
-  // au nombre total de pages après une suppression
+  /*
+   * Sécurité : si une suppression fait disparaître
+   * la dernière page, on revient automatiquement
+   * à une page valide.
+   */
+
   useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(totalPages);
+    if (gridPage > gridTotalPages) {
+      setGridPage(gridTotalPages);
     }
-  }, [currentPage, totalPages]);
+  }, [gridPage, gridTotalPages]);
 
-  // ==============================
-  // LOADING
-  // ==============================
+  useEffect(() => {
+    if (tablePage > tableTotalPages) {
+      setTablePage(tableTotalPages);
+    }
+  }, [tablePage, tableTotalPages]);
+
+  /*
+   * ==========================================
+   * LOADING
+   * ==========================================
+   */
 
   if (loading) {
     return (
@@ -94,9 +153,11 @@ export function FarmList({
     );
   }
 
-  // ==============================
-  // ERROR
-  // ==============================
+  /*
+   * ==========================================
+   * ERROR
+   * ==========================================
+   */
 
   if (error) {
     return (
@@ -119,16 +180,12 @@ export function FarmList({
     );
   }
 
-  // ==============================
-  // RENDER
-  // ==============================
-
   return (
     <div className="space-y-4">
 
-      {/* ==========================
+      {/* ==========================================
           BARRE D'OUTILS
-      ========================== */}
+          ========================================== */}
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
 
@@ -138,9 +195,7 @@ export function FarmList({
 
           <div className="relative flex-1 max-w-md">
 
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400"
-            />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
 
             <input
               type="text"
@@ -157,6 +212,7 @@ export function FarmList({
           {/* Filtres */}
 
           <button
+            type="button"
             className="flex items-center gap-2 px-4 py-2.5 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
           >
             <Filter className="h-4 w-4 text-gray-500" />
@@ -175,6 +231,7 @@ export function FarmList({
           <div className="flex bg-gray-100 rounded-lg p-1">
 
             <button
+              type="button"
               onClick={() => setViewMode('grid')}
               className={`p-2 rounded-md transition-colors ${
                 viewMode === 'grid'
@@ -187,6 +244,7 @@ export function FarmList({
             </button>
 
             <button
+              type="button"
               onClick={() => setViewMode('list')}
               className={`p-2 rounded-md transition-colors ${
                 viewMode === 'list'
@@ -203,6 +261,7 @@ export function FarmList({
           {/* Nouvelle exploitation */}
 
           <button
+            type="button"
             onClick={onAdd}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-lg shadow-green-600/20"
           >
@@ -212,19 +271,18 @@ export function FarmList({
           </button>
 
         </div>
+
       </div>
 
-      {/* ==========================
+      {/* ==========================================
           AUCUNE EXPLOITATION
-      ========================== */}
+          ========================================== */}
 
       {farms.length === 0 ? (
 
         <div className="text-center py-12 bg-white rounded-xl shadow-md">
 
-          <Building2
-            className="h-16 w-16 mx-auto text-gray-300 mb-4"
-          />
+          <Building2 className="h-16 w-16 mx-auto text-gray-300 mb-4" />
 
           <h3 className="text-lg font-medium text-gray-900">
             Aucune exploitation
@@ -235,6 +293,7 @@ export function FarmList({
           </p>
 
           <button
+            type="button"
             onClick={onAdd}
             className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
           >
@@ -245,203 +304,36 @@ export function FarmList({
 
       ) : viewMode === 'grid' ? (
 
-        /* ==========================
-           VUE GRID
-        ========================== */
+        /*
+         * ==========================================
+         * VUE GRID
+         * 4 CARDS PAR PAGE
+         * ==========================================
+         */
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        <div className="space-y-5">
 
-          {farms.map((farm) => (
-            <FarmCard
-              key={farm.id}
-              farm={farm}
-              onEdit={onEdit}
-              onDelete={onDelete}
-              onView={onView}
-            />
-          ))}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 
-        </div>
+            {paginatedGridFarms.map((farm) => (
 
-      ) : (
+              <FarmCard
+                key={farm.id}
+                farm={farm}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                onView={onView}
+              />
 
-        /* ==========================
-           VUE TABLE
-        ========================== */
-
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-
-          <div className="overflow-x-auto">
-
-            <table className="w-full">
-
-              <thead className="bg-gray-50 border-b border-gray-100">
-
-                <tr>
-
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Nom
-                  </th>
-
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Localisation
-                  </th>
-
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Surface
-                  </th>
-
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Statut
-                  </th>
-
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Actions
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody className="divide-y divide-gray-100">
-
-                {/* ==========================
-                    DONNÉES DE LA PAGE
-                ========================== */}
-
-                {paginatedFarms.map((farm) => (
-
-                  <tr
-                    key={farm.id}
-                    className="hover:bg-gray-50 transition-colors"
-                  >
-
-                    {/* Nom */}
-
-                    <td className="px-6 py-4">
-
-                      <div className="flex items-center gap-3">
-
-                        <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
-
-                          <Building2
-                            className="h-5 w-5 text-green-600"
-                          />
-
-                        </div>
-
-                        <div>
-
-                          <p className="font-medium text-gray-900">
-                            {farm.name}
-                          </p>
-
-                          <p className="text-sm text-gray-500">
-                            ID: #
-                            {String(farm.id).padStart(3, '0')}
-                          </p>
-
-                        </div>
-
-                      </div>
-
-                    </td>
-
-                    {/* Localisation */}
-
-                    <td className="px-6 py-4 text-sm text-gray-600">
-
-                      {farm.village}, {farm.district}
-
-                    </td>
-
-                    {/* Surface */}
-
-                    <td className="px-6 py-4 text-sm text-gray-600">
-
-                      {farm.totalSurface} ha
-
-                    </td>
-
-                    {/* Statut */}
-
-                    <td className="px-6 py-4">
-
-                      <span
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-                          farm.isBeneficiary
-                            ? 'bg-green-100 text-green-800'
-                            : 'bg-gray-100 text-gray-600'
-                        }`}
-                      >
-
-                        <span
-                          className={`h-1.5 w-1.5 rounded-full ${
-                            farm.isBeneficiary
-                              ? 'bg-green-600'
-                              : 'bg-gray-400'
-                          }`}
-                        />
-
-                        {farm.isBeneficiary
-                          ? 'Bénéficiaire'
-                          : 'Standard'}
-
-                      </span>
-
-                    </td>
-
-                    {/* Actions */}
-
-                    <td className="px-6 py-4 text-right">
-
-                      <div className="flex items-center justify-end gap-1">
-
-                        <button
-                          onClick={() => onView(farm)}
-                          className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
-                          title="Voir"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-
-                        <button
-                          onClick={() => onEdit(farm)}
-                          className="p-2 hover:bg-green-50 rounded-lg transition-colors text-green-600"
-                          title="Modifier"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </button>
-
-                        <button
-                          onClick={() => onDelete(farm.id)}
-                          className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-
-                      </div>
-
-                    </td>
-
-                  </tr>
-
-                ))}
-
-              </tbody>
-
-            </table>
+            ))}
 
           </div>
 
-          {/* ==========================
-              PAGINATION
-          ========================== */}
+          {/* Pagination GRID */}
 
-          {totalPages > 1 && (
+          {gridTotalPages > 1 && (
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-6 py-4 border-t border-gray-100">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
 
               {/* Informations */}
 
@@ -450,13 +342,16 @@ export function FarmList({
                 Affichage de{' '}
 
                 <span className="font-medium text-gray-700">
-                  {startIndex + 1}
+                  {gridStartIndex + 1}
                 </span>
 
                 {' '}à{' '}
 
                 <span className="font-medium text-gray-700">
-                  {Math.min(endIndex, farms.length)}
+                  {Math.min(
+                    gridEndIndex,
+                    farms.length
+                  )}
                 </span>
 
                 {' '}sur{' '}
@@ -469,44 +364,42 @@ export function FarmList({
 
               </p>
 
-              {/* Navigation */}
+              {/* Boutons */}
 
               <div className="flex items-center gap-2">
 
-                {/* Précédent */}
-
                 <button
+                  type="button"
                   onClick={() =>
-                    setCurrentPage((page) =>
-                      Math.max(page - 1, 1)
+                    setGridPage((prev) =>
+                      Math.max(prev - 1, 1)
                     )
                   }
-                  disabled={currentPage === 1}
+                  disabled={gridPage === 1}
                   className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-
                   <ChevronLeft className="h-4 w-4" />
 
-                  <span className="hidden sm:inline">
-                    Précédent
-                  </span>
-
+                  Précédent
                 </button>
 
-                {/* Numéro de page */}
+                {/* Numéros de pages */}
 
                 <div className="flex items-center gap-1">
 
                   {Array.from(
-                    { length: totalPages },
+                    { length: gridTotalPages },
                     (_, index) => index + 1
                   ).map((page) => (
 
                     <button
+                      type="button"
                       key={page}
-                      onClick={() => setCurrentPage(page)}
-                      className={`min-w-9 h-9 px-3 text-sm rounded-lg transition-colors ${
-                        currentPage === page
+                      onClick={() =>
+                        setGridPage(page)
+                      }
+                      className={`min-w-[36px] h-9 px-2 rounded-lg text-sm font-medium transition-colors ${
+                        gridPage === page
                           ? 'bg-green-600 text-white'
                           : 'text-gray-600 hover:bg-gray-100'
                       }`}
@@ -518,24 +411,289 @@ export function FarmList({
 
                 </div>
 
-                {/* Suivant */}
-
                 <button
+                  type="button"
                   onClick={() =>
-                    setCurrentPage((page) =>
-                      Math.min(page + 1, totalPages)
+                    setGridPage((prev) =>
+                      Math.min(
+                        prev + 1,
+                        gridTotalPages
+                      )
                     )
                   }
-                  disabled={currentPage === totalPages}
+                  disabled={
+                    gridPage === gridTotalPages
+                  }
                   className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                 >
-
-                  <span className="hidden sm:inline">
-                    Suivant
-                  </span>
+                  Suivant
 
                   <ChevronRight className="h-4 w-4" />
+                </button>
 
+              </div>
+
+            </div>
+
+          )}
+
+        </div>
+
+      ) : (
+
+        /*
+         * ==========================================
+         * VUE TABLE
+         * 3 LIGNES PAR PAGE
+         * ==========================================
+         */
+
+        <div className="space-y-5">
+
+          <div className="bg-white rounded-xl shadow-md overflow-hidden">
+
+            <div className="overflow-x-auto">
+
+              <table className="w-full">
+
+                <thead className="bg-gray-50 border-b border-gray-100">
+
+                  <tr>
+
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Nom
+                    </th>
+
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Localisation
+                    </th>
+
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Surface
+                    </th>
+
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Statut
+                    </th>
+
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Actions
+                    </th>
+
+                  </tr>
+
+                </thead>
+
+                <tbody className="divide-y divide-gray-100">
+
+                  {paginatedTableFarms.map((farm) => (
+
+                    <tr
+                      key={farm.id}
+                      className="hover:bg-gray-50 transition-colors"
+                    >
+
+                      <td className="px-6 py-4">
+
+                        <div className="flex items-center gap-3">
+
+                          <div className="h-10 w-10 rounded-lg bg-green-100 flex items-center justify-center flex-shrink-0">
+
+                            <Building2 className="h-5 w-5 text-green-600" />
+
+                          </div>
+
+                          <div>
+
+                            <p className="font-medium text-gray-900">
+                              {farm.name}
+                            </p>
+
+                            <p className="text-sm text-gray-500">
+                              ID: #{String(farm.id).padStart(3, '0')}
+                            </p>
+
+                          </div>
+
+                        </div>
+
+                      </td>
+
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {farm.village}, {farm.district}
+                      </td>
+
+                      <td className="px-6 py-4 text-sm text-gray-600">
+                        {farm.totalSurface} ha
+                      </td>
+
+                      <td className="px-6 py-4">
+
+                        <span
+                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
+                            farm.isBeneficiary
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-600'
+                          }`}
+                        >
+
+                          <span
+                            className={`h-1.5 w-1.5 rounded-full ${
+                              farm.isBeneficiary
+                                ? 'bg-green-600'
+                                : 'bg-gray-400'
+                            }`}
+                          />
+
+                          {farm.isBeneficiary
+                            ? 'Bénéficiaire'
+                            : 'Standard'}
+
+                        </span>
+
+                      </td>
+
+                      <td className="px-6 py-4 text-right">
+
+                        <div className="flex items-center justify-end gap-1">
+
+                          <button
+                            type="button"
+                            onClick={() => onView(farm)}
+                            className="p-2 hover:bg-blue-50 rounded-lg transition-colors text-blue-600"
+                            title="Voir"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onEdit(farm)}
+                            className="p-2 hover:bg-green-50 rounded-lg transition-colors text-green-600"
+                            title="Modifier"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => onDelete(farm.id)}
+                            className="p-2 hover:bg-red-50 rounded-lg transition-colors text-red-600"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+
+                        </div>
+
+                      </td>
+
+                    </tr>
+
+                  ))}
+
+                </tbody>
+
+              </table>
+
+            </div>
+
+          </div>
+
+          {/* Pagination TABLE */}
+
+          {tableTotalPages > 1 && (
+
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-white rounded-xl shadow-sm border border-gray-100 px-4 py-3">
+
+              <p className="text-sm text-gray-500">
+
+                Affichage de{' '}
+
+                <span className="font-medium text-gray-700">
+                  {tableStartIndex + 1}
+                </span>
+
+                {' '}à{' '}
+
+                <span className="font-medium text-gray-700">
+                  {Math.min(
+                    tableEndIndex,
+                    farms.length
+                  )}
+                </span>
+
+                {' '}sur{' '}
+
+                <span className="font-medium text-gray-700">
+                  {farms.length}
+                </span>
+
+                {' '}exploitations
+
+              </p>
+
+              <div className="flex items-center gap-2">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTablePage((prev) =>
+                      Math.max(prev - 1, 1)
+                    )
+                  }
+                  disabled={tablePage === 1}
+                  className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+
+                  Précédent
+                </button>
+
+                <div className="flex items-center gap-1">
+
+                  {Array.from(
+                    { length: tableTotalPages },
+                    (_, index) => index + 1
+                  ).map((page) => (
+
+                    <button
+                      type="button"
+                      key={page}
+                      onClick={() =>
+                        setTablePage(page)
+                      }
+                      className={`min-w-[36px] h-9 px-2 rounded-lg text-sm font-medium transition-colors ${
+                        tablePage === page
+                          ? 'bg-green-600 text-white'
+                          : 'text-gray-600 hover:bg-gray-100'
+                      }`}
+                    >
+                      {page}
+                    </button>
+
+                  ))}
+
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTablePage((prev) =>
+                      Math.min(
+                        prev + 1,
+                        tableTotalPages
+                      )
+                    )
+                  }
+                  disabled={
+                    tablePage === tableTotalPages
+                  }
+                  className="flex items-center gap-1 px-3 py-2 text-sm border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Suivant
+
+                  <ChevronRight className="h-4 w-4" />
                 </button>
 
               </div>
