@@ -75,7 +75,7 @@ export default function Header() {
             {isLoggedIn ? (
               <div className="flex items-center gap-3">
                 <Link
-                  href="/dashboard"
+                  href="/auth/login"
                   className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors"
                 >
                   Dashboard
@@ -144,7 +144,7 @@ export default function Header() {
                 {isLoggedIn ? (
                   <>
                     <Link
-                      href="/dashboard"
+                      href="/auth/login"
                       onClick={() => setIsMenuOpen(false)}
                       className="px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition-colors text-center"
                     >
